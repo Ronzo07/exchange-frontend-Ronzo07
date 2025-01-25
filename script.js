@@ -1,3 +1,30 @@
+document.cookie = "userSession=active; HttpOnly; Secure; SameSite=Strict";
+
+function sanitizeInput(input) {
+    const temp = document.createElement('div');
+    temp.textContent = input;
+    return temp.innerHTML;
+}
+
+function encryptData(data) {
+    return btoa(data);
+}
+
+let transactionCount = 0;
+const maxTransactions = 10;
+setInterval(() => {
+    transactionCount = 0;
+}, 60000);
+
+function canAddTransaction() {
+    if (transactionCount >= maxTransactions) {
+        alert('Too many transactions! Please wait a minute.');
+        return false;
+    }
+    transactionCount++;
+    return true;
+}
+
 var addButton = document.getElementById("add-button");
 addButton.addEventListener("click", addItem);
 
@@ -5,30 +32,45 @@ var sellUserTransactions = []; // Selling USD
 var buyUserTransactions = [];
 
 function addItem() {
-    
-    var lbpInput = document.getElementById("lbp-amount");
-    var usdInput = document.getElementById("usd-amount");
-    var transactionTypeSelect = document.getElementById("transaction-type");
-   
-    var lbpAmount = parseFloat(lbpInput.value);
-    var usdAmound = parseFloat(usdInput.value);
-    var transactionType = transactionTypeSelect.value;
-    
-    // Validate input
-    if (isNaN(lbpAmount) || isNaN(usdAmound) || lbpAmount <= 0 || usdAmound <= 0) {
-        alert("Please enter valid amounts for both LBP and USD.")
-        return;
-    }
+    try {
+        if (!canAddTransaction()) return;
 
-    if (transactionType == "usd-to-lbp") {
-        sellUserTransactions.push(lbpAmount/usdAmound);
-    } else {
-        buyUserTransactions.push(usdAmound/lbpAmount);
-    }
+        // Sanitize user inputs
+        const sanitizedLBP = sanitizeInput(document.getElementById('lbp-amount').value);
+        const sanitizedUSD = sanitizeInput(document.getElementById('usd-amount').value);
+        const sanitizedType = sanitizeInput(document.getElementById('transaction-type').value);
 
-    lbpInput.value = "";
-    usdInput.value = "";
-    updatesRates();
+        const lbpAmount = parseFloat(sanitizedLBP);
+        const usdAmount = parseFloat(sanitizedUSD);
+        var transactionType = sanitizedType;
+        
+        // Validate input
+        if (isNaN(lbpAmount) || isNaN(usdAmount) || lbpAmount <= 0 || usdAmount <= 0) {
+            alert("Please enter valid amounts for both LBP and USD.")
+            return;
+        }
+        const encryptedTransaction = encryptData(`${sanitizedLBP}-${sanitizedUSD}-${sanitizedType}`);
+        console.log("Encrypted Transaction:", encryptedTransaction);
+        console.log('Transaction submitted:', { lbpAmount, usdAmount, type: sanitizedType });
+
+        console.log('Transaction submitted:', {
+            lbpAmount: sanitizedLBP,
+            usdAmount: sanitizedUSD,
+            type: sanitizedType
+        });
+
+        if (transactionType == "usd-to-lbp") {
+            sellUserTransactions.push(lbpAmount/usdAmount);
+        } else {
+            buyUserTransactions.push(usdAmount/lbpAmount);
+        }
+
+        document.getElementById('lbp-amount').value = "";
+        document.getElementById('usd-amount').value = "";
+        updatesRates();
+    } catch (error) {
+        console.error('Error adding Transaction:', error);
+    }
 }
 
 function updatesRates() {
