@@ -15,6 +15,28 @@
         <p>LBP to USD Exchange Rate</p>
         <h3>Buy USD: <span id="buy-usd-rate">Not available yet</span></h3>
         <h3>Sell USD: <span id="sell-usd-rate">Not available yet</span></h3>
+       
+        <hr />
+
+        <h2>Record a recent transaction</h2>
+        <form name="transaction-entry">
+            <div class="amount-input">
+                <label for="lbp-amount">LBP Amount</label>
+                <input id="lbp-amount" type="number" />
+            </div>
+
+            <div class="amount-input">
+                <label for="usd-amount">USD Amount</label>
+                <input id="usd-amount" type="number" />
+            </div>
+
+            <select id="transaction-type">
+                <option value="usd-to-lbp">USD to LBP</option>
+                <option value="lbp-to-usd">LBP to USD</option>
+            </select>
+            
+            <button id="add-button" class="button" type="button">Add</button>
+        </form>
     </div>
 
 </body>
