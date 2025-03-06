@@ -1,7 +1,16 @@
 import './App.css';
-import { useEffect, useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import UserCredentialsDialog from './UserCredentialsDialog/UserCredentialsDialog';
+import { create } from '@mui/material/styles/createTransitions';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+import { getUserToken, saveUserToken, clearUserToken } from "./localStorage";
 
-var SERVER_URL = "http://192.168.1.208:5000"; // The Windows machine's IP as the backend run there
+var SERVER_URL = "http://192.168.26.79:5000"; // The Windows machine's IP as the backend run there
 
 function App() {
     let [buyUsdRate, setBuyUsdRate] = useState(null);
@@ -9,7 +18,15 @@ function App() {
     let [lbpInput, setLbpInput] = useState("");
     let [usdInput, setUsdInput] = useState("");
     let [transactionType, setTransactionType] = useState("usd-to-lbp");
-    
+    let [userToken, setUserToken] = useState(getUserToken()); // Initialize from local storage
+    const States = {                                  
+        PENDING: "PENDING",
+        USER_CREATION: "USER_CREATION",
+        USER_LOG_IN: "USER_LOG_IN",
+        USER_AUTHENTICATED: "USER_AUTHENTICATED",
+    };
+    let [authState, setAuthState] = useState(States.PENDING);
+
     function fetchRates() {
         fetch(`${SERVER_URL}/exchangeRate`)
         .then(response => response.json())
@@ -18,6 +35,43 @@ function App() {
             setSellUsdRate(data.usd_to_lbp);
         })
         .catch(error => console.error("Error fetching rates:", error));
+    }
+
+    function login(username, password) {
+        return fetch(`${SERVER_URL}/auth`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                user_name: username,
+                password: password,
+            }),
+        })
+        .then((response) => response.json())
+        .then((body) => {
+            setAuthState(States.USER_AUTHENTICATED);
+            setUserToken(body.token);
+            saveUserToken(body.token);
+        });
+    }
+    
+    function createUser(username, password) {
+        return fetch(`${SERVER_URL}/user`, { 
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                user_name: username,
+                password: password,
+            }),
+        }).then((response) => login(username, password)); // Login immediately after creating user
+    }
+
+    function logout() {
+        setUserToken(null);
+        clearUserToken();
     }
 
     useEffect(fetchRates, []);
@@ -61,14 +115,72 @@ function App() {
 
     return (
     <div className="App">
-        <div className="header">
+        {/* <div className="header">
             <h1>Bloomberg Exchange Platform</h1>
-        </div>
+        </div> */}
+        {/* <Toolbar classes={{root: "nav"}}>
+            <Typography variant="h5"></Typography>
+            <div>
+                <Button color="inherit" onClick={() => setAuthState(States.USER_CREATION)}>Register</Button>
+                <Button color="inherit" onClick={() => setAuthState(States.USER_LOG_IN)}>Login</Button>
+            </div>
+        </Toolbar> */}
+
+        <Toolbar classes={{ root: "nav" }}>
+            <Typography variant="h5">Bloomberg Exchange Platform</Typography>
+            {userToken !== null ? ( // Conditional rendering starts here
+                <Button color="inherit" onClick={logout}>
+                    Logout
+                </Button>
+            ) : (
+                <div>
+                    <Button
+                        color="inherit"
+                        onClick={() => setAuthState(States.USER_CREATION)}
+                    >
+                        Register
+                    </Button>
+                    <Button
+                        color="inherit"
+                        onClick={() => setAuthState(States.USER_LOG_IN)}
+                    >
+                        Login
+                    </Button>
+                </div>
+            )} {/* Conditional rendering ends here */}
+        </Toolbar>
+
+        <UserCredentialsDialog
+            open={authState === States.USER_CREATION}
+            title="Register"
+            submitText="Register"
+            onSubmit={createUser} 
+            onClose={() => setAuthState(States.PENDING)} 
+        />
+
+        <UserCredentialsDialog
+            open={authState === States.USER_LOG_IN}       // Open when authState is USER_LOG_IN
+            title="Login"
+            submitText="Login"
+            onSubmit={login} 
+            onClose={() => setAuthState(States.PENDING)}   // onClose to reset state
+        />
+
+        <Snackbar
+            elevation={6}
+            variant="filled"
+            open={authState === States.USER_AUTHENTICATED}
+            autoHideDuration={2000}
+            onClose={() => setAuthState(States.PENDING)}
+        >
+            <Alert severity="success">Success</Alert>
+        </Snackbar>
+
           
         <div className="wrapper">
             <h2>Today's Exchange Rate</h2>
             <p>LBP to USD Exchange Rate</p>
-            <h3>Buy USD: <span id="buy-usd-rate">{buyUsdRate ? `${buyUsdRate.toFixed(2)} USD per 1 LBP` : "Not available yet"}</span></h3>
+            <h3>Buy USD: <span id="buy-usd-rate">{buyUsdRate ? `${buyUsdRate.toFixed(2)} LBP per 1 USD` : "Not available yet"}</span></h3>
             <h3>Sell USD: <span id="sell-usd-rate">{sellUsdRate ? `${sellUsdRate.toFixed(2)} LBP per 1 USD` : "Not available yet"}</span></h3>
             
             <hr />

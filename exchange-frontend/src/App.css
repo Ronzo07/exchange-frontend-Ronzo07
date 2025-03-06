@@ -58,6 +58,12 @@ body {
 .wrapper hr {
   margin: 40px auto;
 }
+
+.nav {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
  
 @media only screen and (min-width: 1400px) {
   .wrapper {
