@@ -1,96 +1,63 @@
-body {
-  background-color: #e9ebf0;
-  font-family: Helvetica, Arial;
+/* App.css */
+
+.App {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f7f7f7;
+  padding: 20px;
 }
 
-.header {
-  background-color: #0093d5;
-  padding: 10px;
-}
-
-.header h1 {
-  color: #fff;
-  text-align: center; 
-}
-
-.wrapper {
-  margin-top: 50px;
-  background-color: #fff;
-  border-radius: 15px;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 30px;
-}
-
-.wrapper p {
-  font-style: italic;
-  color: #666;
-}
-
-.wrapper label {
-  display: block;
-}
-
-.wrapper input {
-  padding: 3px 6px;
-}
-
-.amount-input {
-  margin-bottom: 10px;
-}
-
-.wrapper select {
-  display: block;
-}
-
-.button {
-  margin: 10px 2px;
-  padding: 5px 20px;
-  border-radius: 8px;
-  background-color: #0093d5;
-  border: none;
-  color: #fff;
-  text-align: center;
-  display: inline-block;
-  font-size: small;
-}
-
-.wrapper hr {
-  margin: 40px auto;
-}
-
+/* Navigation Bar Styling */
 .nav {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-}
- 
-@media only screen and (min-width: 1400px) {
-  .wrapper {
-      width: 50%;
-  }
-  .wrapper input {
-      width: 600px;
-  }
+  background-color: #1976d2;
+  padding: 10px 20px;
+  color: white;
 }
 
-@media only screen and (max-width: 1399px) and (min-width: 750px) {
-  .wrapper {
-      width: 75%;
-  }
-
-  .wrapper input {
-      width: 400px;
-  }
+/* Wrapper for Distinct Sections */
+.wrapper {
+  background-color: #fff;
+  margin: 20px auto;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 800px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Calculator Section */
 .calculator {
   display: flex;
   align-items: center;
-  gap: 1rem; /* space between elements */
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
-.calculator .MuiFormControl-root {
-  /* Optionally fix a width or let MUI handle it automatically */
-  min-width: 150px;
+/* Transaction Form Input Groups */
+.amount-input {
+  margin-bottom: 10px;
+}
+
+/* Styling for Buttons (if not using MUI Button for custom cases) */
+button.button {
+  padding: 8px 16px;
+  background-color: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button.button:hover {
+  background-color: #1565c0;
+}
+
+/* Optional: Style form select and input for consistency */
+form select,
+form input {
+  padding: 8px;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
