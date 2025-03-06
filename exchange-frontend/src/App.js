@@ -9,6 +9,9 @@ import { create } from '@mui/material/styles/createTransitions';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import { getUserToken, saveUserToken, clearUserToken } from "./localStorage";
+import TextField from '@mui/material/TextField';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 
 var SERVER_URL = "http://192.168.26.79:5000"; // The Windows machine's IP as the backend run there
 
@@ -19,6 +22,11 @@ function App() {
     let [usdInput, setUsdInput] = useState("");
     let [transactionType, setTransactionType] = useState("usd-to-lbp");
     let [userToken, setUserToken] = useState(getUserToken()); // Initialize from local storage
+    // State for the rate calculator
+    let [calcAmount, setCalcAmount] = useState("");
+    let [calcCurrency, setCalcCurrency] = useState("USD"); // default selection can be "USD" or "LBP"
+    let [calcResult, setCalcResult] = useState(null);
+  
     const States = {                                  
         PENDING: "PENDING",
         USER_CREATION: "USER_CREATION",
@@ -113,99 +121,161 @@ function App() {
         }
     }
 
-    return (
-    <div className="App">
-        {/* <div className="header">
-            <h1>Bloomberg Exchange Platform</h1>
-        </div> */}
-        {/* <Toolbar classes={{root: "nav"}}>
-            <Typography variant="h5"></Typography>
-            <div>
-                <Button color="inherit" onClick={() => setAuthState(States.USER_CREATION)}>Register</Button>
-                <Button color="inherit" onClick={() => setAuthState(States.USER_LOG_IN)}>Login</Button>
-            </div>
-        </Toolbar> */}
+    function calculateConversion() {
+        const amount = parseFloat(calcAmount);
+        if (isNaN(amount)) {
+          setCalcResult("Invalid amount");
+          return;
+        }
+        
+        let result;
+        if (calcCurrency === "SELL") {
+          // When converting USD to LBP, use the sellUsdRate (assumes selling USD gives you LBP)
+          if (sellUsdRate) {
+            result = amount * sellUsdRate;
+          } else {
+            result = "Rate unavailable";
+          }
+        } else if (calcCurrency === "BUY") {
+          // When converting LBP to USD, use the buyUsdRate (assumes buying USD using LBP)
+          if (buyUsdRate) {
+            result = amount * buyUsdRate;
+          } else {
+            result = "Rate unavailable";
+          }
+        }
+        setCalcResult(result);
+    }
 
-        <Toolbar classes={{ root: "nav" }}>
+    return (
+        <div className="App">
+            <Toolbar classes={{ root: "nav" }}>
             <Typography variant="h5">Bloomberg Exchange Platform</Typography>
-            {userToken !== null ? ( // Conditional rendering starts here
+            {userToken !== null ? (
                 <Button color="inherit" onClick={logout}>
-                    Logout
+                Logout
                 </Button>
             ) : (
                 <div>
-                    <Button
-                        color="inherit"
-                        onClick={() => setAuthState(States.USER_CREATION)}
-                    >
-                        Register
-                    </Button>
-                    <Button
-                        color="inherit"
-                        onClick={() => setAuthState(States.USER_LOG_IN)}
-                    >
-                        Login
-                    </Button>
+                <Button color="inherit" onClick={() => setAuthState(States.USER_CREATION)}>
+                    Register
+                </Button>
+                <Button color="inherit" onClick={() => setAuthState(States.USER_LOG_IN)}>
+                    Login
+                </Button>
                 </div>
-            )} {/* Conditional rendering ends here */}
-        </Toolbar>
-
-        <UserCredentialsDialog
+            )}
+            </Toolbar>
+        
+            <UserCredentialsDialog
             open={authState === States.USER_CREATION}
             title="Register"
             submitText="Register"
-            onSubmit={createUser} 
-            onClose={() => setAuthState(States.PENDING)} 
-        />
-
-        <UserCredentialsDialog
-            open={authState === States.USER_LOG_IN}       // Open when authState is USER_LOG_IN
+            onSubmit={createUser}
+            onClose={() => setAuthState(States.PENDING)}
+            />
+        
+            <UserCredentialsDialog
+            open={authState === States.USER_LOG_IN}
             title="Login"
             submitText="Login"
-            onSubmit={login} 
-            onClose={() => setAuthState(States.PENDING)}   // onClose to reset state
-        />
-
-        <Snackbar
+            onSubmit={login}
+            onClose={() => setAuthState(States.PENDING)}
+            />
+        
+            <Snackbar
             elevation={6}
             variant="filled"
             open={authState === States.USER_AUTHENTICATED}
             autoHideDuration={2000}
             onClose={() => setAuthState(States.PENDING)}
-        >
+            >
             <Alert severity="success">Success</Alert>
-        </Snackbar>
-
-          
-        <div className="wrapper">
-            <h2>Today's Exchange Rate</h2>
-            <p>LBP to USD Exchange Rate</p>
-            <h3>Buy USD: <span id="buy-usd-rate">{buyUsdRate ? `${buyUsdRate.toFixed(2)} LBP per 1 USD` : "Not available yet"}</span></h3>
-            <h3>Sell USD: <span id="sell-usd-rate">{sellUsdRate ? `${sellUsdRate.toFixed(2)} LBP per 1 USD` : "Not available yet"}</span></h3>
+            </Snackbar>
+        
+            {/* First Section: Exchange Rates and Calculator */}
+            <div className="wrapper">
+            <Typography variant="h4">Today's Exchange Rate</Typography>
+            <Typography variant="subtitle1">LBP to USD Exchange Rate</Typography>
+            <Typography variant="h6">
+                Buy USD: <span id="buy-usd-rate">{buyUsdRate ? `${buyUsdRate.toFixed(2)} LBP per 1 USD` : "Not available yet"}</span>
+            </Typography>
+            <Typography variant="h6">
+                Sell USD: <span id="sell-usd-rate">{sellUsdRate ? `${sellUsdRate.toFixed(2)} LBP per 1 USD` : "Not available yet"}</span>
+            </Typography>
             
             <hr />
             
-            <h2>Record a recent transaction</h2>
+            {/* Calculator UI */}
+            <Typography variant="h5">Currency Calculator</Typography>
+            <div className="calculator">
+                <TextField
+                label="Amount"
+                type="number"
+                variant='outlined'
+                value={calcAmount}
+                onChange={(e) => setCalcAmount(e.target.value)}
+                style={{ marginRight: 10 }}
+                />
+                <Select
+                value={calcCurrency}
+                onChange={(e) => setCalcCurrency(e.target.value)}
+                style={{ marginRight: 10, minWidth: 120}}
+                >
+                <MenuItem value="SELL">Sell USD</MenuItem>
+                <MenuItem value="BUY">Buy USD</MenuItem>
+                </Select>
+                <Button variant="contained" color="primary" onClick={calculateConversion}>
+                Calculate
+                </Button>
+                {calcResult !== null && (
+                <Typography variant="body1" style={{ marginTop: 10 }}>
+                    Result: {calcResult}
+                </Typography>
+                )}
+            </div>
+            
+            </div>
+        
+            {/* Second Section: Transaction Form */}
+            <div className="wrapper">
+            <Typography variant="h4">Record a Recent Transaction</Typography>
             <form name="transaction-entry">
                 <div className="amount-input">
-                    <label htmlFor="lbp-amount">LBP Amount</label>
-                    <input id="lbp-amount" type="number" value={lbpInput} onChange={e => setLbpInput(e.target.value)}/>
+                <label htmlFor="lbp-amount">LBP Amount</label>
+                <input
+                    id="lbp-amount"
+                    type="number"
+                    value={lbpInput}
+                    onChange={(e) => setLbpInput(e.target.value)}
+                />
                 </div>
                 
                 <div className="amount-input">
-                    <label htmlFor="usd-amount">USD Amount</label>
-                    <input id="usd-amount" type="number" value={usdInput} onChange={e => setUsdInput(e.target.value)}/>
+                <label htmlFor="usd-amount">USD Amount</label>
+                <input
+                    id="usd-amount"
+                    type="number"
+                    value={usdInput}
+                    onChange={(e) => setUsdInput(e.target.value)}
+                />
                 </div>
                 
-                <select id="transaction-type" value={transactionType} onChange={e => setTransactionType(e.target.value)}>
-                    <option value="usd-to-lbp">USD to LBP</option>
-                    <option value="lbp-to-usd">LBP to USD</option>
+                <select
+                id="transaction-type"
+                value={transactionType}
+                onChange={(e) => setTransactionType(e.target.value)}
+                >
+                <option value="usd-to-lbp">USD to LBP</option>
+                <option value="lbp-to-usd">LBP to USD</option>
                 </select>
-                <button id="add-button" className="button" type="button" onClick={addItem}>Add</button>
+                <button id="add-button" className="button" type="button" onClick={addItem}>
+                Add
+                </button>
             </form>
+            </div>
         </div>
-    </div>
-  );
+    );
 }
 
 export default App;
